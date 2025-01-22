@@ -14,9 +14,13 @@ export class CarController {
   }
 
    @Get('filter')
-    filterCars(@Query() filters: FilterCarDto) {
+   filterCars(@Query() filters: FilterCarDto) {
       return this.carService.filterCars(filters);
     }
+     @Get('getAllCars')
+      getAllCars() {
+        return this.carService.getAllCars();
+      }
      @Get('nearby')
       getCarsNearby(
         @Query('latitude') latitude: number,

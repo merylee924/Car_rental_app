@@ -1,11 +1,11 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsInt } from 'class-validator';
 
 export class CreateCarDto {
-  @IsString()
-  brand: string;
+  @IsInt()
+  brandId: number;
 
-  @IsString()
-  model: string;
+  @IsInt()
+  modelId: number;
 
   @IsString()
   color: string;
@@ -18,6 +18,10 @@ export class CreateCarDto {
   year?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   agencyId?: number;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }

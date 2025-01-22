@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body,Param,Get, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './create-user.dto';
 
@@ -7,11 +7,31 @@ import { CreateUserDto } from './create-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('register')
-  async register(@Body() createUserDto: CreateUserDto) {
-    const { username, password, firstName, lastName, email, picture } = createUserDto;
-    return this.usersService.createUser(username, password, firstName, lastName, email, picture);
-  }
+@Post('register')
+async register(@Body() createUserDto: CreateUserDto) {
+  const {
+    username,
+    password,
+    firstName,
+    lastName,
+    email,
+    picture,
+    phoneNumber,
+    role
+  } = createUserDto;
+
+  return this.usersService.createUser(
+    username,
+    password,
+    firstName,
+    lastName,
+    email,
+    picture,
+    phoneNumber,
+    role
+  );
+}
+
 
   @Post('login')
     async login(@Body() loginDto: { username: string; password: string }) {
@@ -25,4 +45,13 @@ export class UsersController {
         user,
       };
     }
+
+ @Get(':username')
+  async getUserInfo(@Param('username') username: string) {
+    const user = await this.usersService.findUserByUsername(username);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return user;
+  }
 }

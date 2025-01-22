@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne } from 'typeorm';
 import { Car } from '../../car/entities/car.entity';
+import { User } from '../../users/user.entity';
 
 @Entity()
 export class Agency {
@@ -8,6 +9,11 @@ export class Agency {
 
   @Column()
   name: string;
+
+    @Column({ nullable: true })
+   description: string;
+    @Column({ nullable: true })
+     imageBase64: string;
 
   @Column({
     type: 'geometry',
@@ -19,4 +25,7 @@ export class Agency {
 
   @OneToMany(() => Car, (car) => car.agency, { cascade: true })
   cars: Car[];
+
+  @OneToOne(() => User, user => user.agency)
+  user: User; // Relation OneToOne avec User
 }
