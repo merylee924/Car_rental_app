@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from 'typeorm';
 import UserRole from './userRole';
 import { Agency } from '../agency/entities/agency.entity';
+import { Reservation } from '../reservation/entities/reservation.entity';
 
 @Entity('users')
 export class User {
@@ -31,7 +32,11 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENT })
   role: UserRole;
 
-  @OneToOne(() => Agency, agency => agency.user, { cascade: true })
-  @JoinColumn()
+  // Relation OneToMany avec Reservation
+  @OneToMany(() => Reservation, (reservation) => reservation.user)
+  reservations: Reservation[];
+
+  // Nouvelle relation OneToOne avec Agency
+  @OneToOne(() => Agency, (agency) => agency.user, { nullable: true })
   agency: Agency;
 }

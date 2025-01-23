@@ -14,7 +14,6 @@ export class Brand {
   @OneToMany(() => Model, (model) => model.brand)
   models: Model[];
 
-  @OneToMany(() => Car, (car) => car.brand)
-  cars: Car[];
+
 
 }

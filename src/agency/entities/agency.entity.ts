@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne ,JoinColumn} from 'typeorm';
 import { Car } from '../../car/entities/car.entity';
 import { User } from '../../users/user.entity';
 
@@ -26,6 +26,7 @@ export class Agency {
   @OneToMany(() => Car, (car) => car.agency, { cascade: true })
   cars: Car[];
 
-  @OneToOne(() => User, user => user.agency)
-  user: User; // Relation OneToOne avec User
+ @OneToOne(() => User, { nullable: true })
+  @JoinColumn()
+  user: User;
 }

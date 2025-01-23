@@ -1,34 +1,70 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
-import { Brand } from '../../brand/entities/brand.entity';
-import { Model } from '../../model/entities/model.entity';
-import { Agency } from '../../agency/entities/agency.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne ,OneToMany} from "typeorm"
+import { Brand } from "../../brand/entities/brand.entity"
+import { Model } from "../../model/entities/model.entity"
+import { Agency } from "../../agency/entities/agency.entity"
+import { CarCategory, FuelType } from "../enums/carEnums"
+import { Reservation } from "../../reservation/entities/reservation.entity";
+import { IsString,  IsOptional } from 'class-validator';
 
 @Entity()
 export class Car {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
-  @ManyToOne(() => Brand, (brand) => brand.cars, { nullable: false, onDelete: 'CASCADE' })
-  brand: Brand;
-
-  @ManyToOne(() => Model, (model) => model.cars, { nullable: false, onDelete: 'CASCADE' })
-  model: Model;
-
-  @Column()
-  color: string;
+  @ManyToOne(
+    () => Model,
+    (model) => model.cars,
+    { nullable: false, onDelete: "CASCADE" },
+  )
+  model: Model
 
   @Column()
-  pricePerDay: number;
+  color: string
+
+  @Column()
+  pricePerDay: number
 
   @Column({ nullable: true })
-  year?: number;
+  year?: number
 
   @Column({ default: false })
-  isRented: boolean;
+  isRented: boolean
 
   @Column({ nullable: true })
-  imageUrl?: string;
+  imageUrl?: string
 
-  @ManyToOne(() => Agency, (agency) => agency.cars, { nullable: false, onDelete: 'CASCADE' })
-  agency: Agency;
+  @Column()
+  nbrPersonnes: number
+
+  @ManyToOne(
+    () => Agency,
+    (agency) => agency.cars,
+    { nullable: false, onDelete: "CASCADE" },
+  )
+  agency: Agency
+
+  @Column({
+    type: "enum",
+    enum: CarCategory,
+    default: CarCategory.Family,
+  })
+  category: CarCategory
+
+  @Column({
+    type: "enum",
+    enum: FuelType,
+    default: FuelType.Essence,
+  })
+  fuelType: FuelType
+
+   @OneToMany(
+      () => Reservation,
+      (reservation) => reservation.car
+    )
+    reservations: Reservation[]
+
+      @IsOptional()
+      @IsString()
+      createdAt?: string;
 }
+

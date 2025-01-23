@@ -33,9 +33,7 @@ export class UsersService {
      // Optionnel : vérifier la taille de l'image
      const base64Data = picture.split(',')[1];  // Découper le préfixe 'data:image/...'
      const imageBuffer = Buffer.from(base64Data, 'base64');
-     if (imageBuffer.length > 2 * 1024 * 1024) {  // 2MB max
-       throw new Error('Image size exceeds the 2MB limit.');
-     }
+
    }
 
    // Créer un nouvel utilisateur
@@ -67,5 +65,20 @@ async findUserByUsername(username: string): Promise<User | undefined> {
     }
     return null;
   }
+
+
+  async findCarsByUsername(username: string) {
+    const user = await this.userRepository.findOne({
+      where: { username },
+      relations: ['agency', 'agency.cars'],
+    });
+
+    if (!user || !user.agency) {
+      throw new Error('Aucune agence trouvée pour cet utilisateur.');
+    }
+
+    return user.agency.cars;
+  }
+
 
 }

@@ -21,4 +21,17 @@ export class AgencyController {
   async getCarsByAgency(@Param('agencyId') agencyId: number): Promise<Car[]> {
     return this.agencyService.getCarsByAgency(agencyId);
   }
+
+    @Get('/user/:userId/hasAgency')
+    async hasAgency(@Param('userId') userId: number) {
+      const agency = await this.agencyService.findAgencyByUserId(userId);
+      return { hasAgency: !!agency };
+    }
+
+    @Get('agency/:username')
+    async getAgencyIdByUsername(@Param('username') username: string): Promise<number> {
+      return this.agencyService.findAgencyIdByUsername(username);
+    }
+
+
 }

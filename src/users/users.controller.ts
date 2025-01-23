@@ -54,4 +54,13 @@ async register(@Body() createUserDto: CreateUserDto) {
     }
     return user;
   }
+
+  @Get(':username/cars')
+  async getCarsByUsername(@Param('username') username: string) {
+    return this.usersService.findCarsByUsername(username);
+  }
+
+
+
+
 }

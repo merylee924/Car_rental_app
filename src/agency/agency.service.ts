@@ -49,4 +49,25 @@ export class AgencyService {
     }
     return agency.cars;
   }
+
+
+    async findAgencyByUserId(userId: number): Promise<Agency | null> {
+      return this.agencyRepository.findOne({
+        where: { user: { id: userId } },
+        relations: ['user'],
+      });
+    }
+    async findAgencyIdByUsername(username: string): Promise<number> {
+      const user = await this.userRepository.findOne({
+        where: { username },
+        relations: ['agency'], // Inclure la relation entre User et Agency
+      });
+
+      if (!user || !user.agency) {
+        throw new Error('Agence non trouvée pour cet utilisateur');
+      }
+
+      return user.agency.id; // Retourne l'ID de l'agence
+    }
+
 }
