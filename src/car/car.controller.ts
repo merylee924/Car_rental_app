@@ -44,4 +44,9 @@ export class CarController {
       await this.carService.deleteCarById(id);
       return { message: `Car with ID ${id} has been successfully deleted` };
     }
+
+  @Get(':id/brand-model')
+  async getCarBrandAndModel(@Param('id') carId: number) {
+    return this.carService.getCarBrandAndModel(carId);
+  }
 }

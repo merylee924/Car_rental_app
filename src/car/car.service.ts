@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable , NotFoundException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Car } from './entities/car.entity';
@@ -136,5 +136,21 @@ async createCar(data: CreateCarDto): Promise<Car> {
 
     await this.carRepository.remove(car);
   }
+
+  async getCarBrandAndModel(carId: number) {
+      const car = await this.carRepository.findOne({
+        where: { id: carId },
+        relations: ['model', 'model.brand'], // Ensure relations are loaded
+      });
+
+      if (!car) {
+        throw new NotFoundException(`Car with ID ${carId} not found.`);
+      }
+
+      return {
+        brandName: car.model.brand.name,
+        modelName: car.model.name,
+      };
+    }
 
 }
