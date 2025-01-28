@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { AgencyService } from './agency.service';
 import { CreateAgencyDto } from './dto/create-agency.dto';
 import { Car } from '../car/entities/car.entity';
+import { Agency } from './entities/agency.entity';
 
 @Controller('agencies')
 export class AgencyController {
@@ -33,5 +34,8 @@ export class AgencyController {
       return this.agencyService.findAgencyIdByUsername(username);
     }
 
-
+      @Get('agencyInfo/:username')
+    async getAgencyInfoByUsername(@Param('username') username: string): Promise<Agency> {
+      return this.agencyService.findAgencyInfoByUsername(username);
+    }
 }

@@ -70,4 +70,18 @@ export class AgencyService {
       return user.agency.id; // Retourne l'ID de l'agence
     }
 
+    async findAgencyInfoByUsername(username: string): Promise<Agency> {
+      const user = await this.userRepository.findOne({
+        where: { username },
+        relations: ['agency'], // Inclure la relation entre User et Agency
+      });
+
+      if (!user || !user.agency) {
+        throw new Error('Agence non trouvée pour cet utilisateur');
+      }
+    
+      return user.agency;
+    }
+    
+
 }

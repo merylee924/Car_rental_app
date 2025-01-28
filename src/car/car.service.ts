@@ -152,5 +152,17 @@ async createCar(data: CreateCarDto): Promise<Car> {
         modelName: car.model.name,
       };
     }
-
+    
+    async findAgencyById(agencyId: number): Promise<Agency | null> {
+      const agency = await this.agencyRepository.findOne({
+        where: { id: agencyId },
+      });
+    
+      if (!agency) {
+        throw new Error(`Agence avec l'ID ${agencyId} non trouvée`);
+      }
+    
+      return agency;
+    }
+    
 }
