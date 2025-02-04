@@ -1,10 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne ,OneToMany} from "typeorm"
-import { Brand } from "../../brand/entities/brand.entity"
 import { Model } from "../../model/entities/model.entity"
 import { Agency } from "../../agency/entities/agency.entity"
 import { CarCategory, FuelType } from "../enums/carEnums"
 import { Reservation } from "../../reservation/entities/reservation.entity";
-import { IsString,  IsOptional } from 'class-validator';
 
 @Entity()
 export class Car {
@@ -57,14 +55,15 @@ export class Car {
   })
   fuelType: FuelType
 
-   @OneToMany(
-      () => Reservation,
-      (reservation) => reservation.car
-    )
-    reservations: Reservation[]
+  @OneToMany(
+    () => Reservation,
+    (reservation) => reservation.car
+  )
+  reservations: Reservation[]
 
-      @IsOptional()
-      @IsString()
-      createdAt?: string;
+  @Column({ nullable: true })
+  createdAt?: string;
+
+  
 }
 

@@ -38,4 +38,9 @@ export class AgencyController {
     async getAgencyInfoByUsername(@Param('username') username: string): Promise<Agency> {
       return this.agencyService.findAgencyInfoByUsername(username);
     }
+
+    @Get(':id')
+    async getAgencyById(@Param('id', ParseIntPipe) id: number): Promise<Agency> {
+      return this.agencyService.findAgencyById(id);
+    }
 }

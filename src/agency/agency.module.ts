@@ -4,7 +4,7 @@ import { Agency } from './entities/agency.entity';
 import { Car } from '../car/entities/car.entity';
 import { AgencyService } from './agency.service';
 import { AgencyController } from './agency.controller';
-import { User } from '../users/user.entity';
+import { User } from '../users/entities/user.entity';
 
 
 @Module({

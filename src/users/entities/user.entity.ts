@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from 'typeorm';
-import UserRole from './userRole';
-import { Agency } from '../agency/entities/agency.entity';
-import { Reservation } from '../reservation/entities/reservation.entity';
+import UserRole from '../userRole';
+import { Agency } from '../../agency/entities/agency.entity';
+import { Reservation } from '../../reservation/entities/reservation.entity';
 
 @Entity('users')
 export class User {

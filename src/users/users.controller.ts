@@ -1,6 +1,6 @@
-import { Controller, Post, Body,Param,Get, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body,Param,Get, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 
 @Controller('users')
@@ -60,6 +60,14 @@ async register(@Body() createUserDto: CreateUserDto) {
     return this.usersService.findCarsByUsername(username);
   }
 
+  @Get('id/:id')
+  async getUsernameById(@Param('id') id: string) {
+    const user = await this.usersService.findUserById(Number.parseInt(id, 10));
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
 
 
 

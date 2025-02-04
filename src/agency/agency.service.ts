@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Agency } from './entities/agency.entity';
 import { CreateAgencyDto } from './dto/create-agency.dto';
-import { User } from '../users/user.entity'; // Import de l'entité User
+import { User } from '../users/entities/user.entity'; // Import de l'entité User
 
 @Injectable()
 export class AgencyService {
@@ -35,9 +35,27 @@ export class AgencyService {
     return await this.agencyRepository.save(agency);
   }
 
-  async getAgencies(): Promise<Agency[]> {
-    return this.agencyRepository.find();
-  }
+  async getAgencies(): Promise<any[]> {
+    try {
+        // Récupérer les agences avec leur relation user
+        const agencies = await this.agencyRepository.find({ 
+            relations: ['user'] 
+        });
+
+        // Transformer les données pour inclure userId
+        return agencies.map(agency => ({
+            id: agency.id,
+            name: agency.name,
+            description: agency.description,
+            imageBase64: agency.imageBase64,
+            location: agency.location,
+            userId: agency.user ? agency.user.id : null  // Récupérer l'ID de l'utilisateur s'il existe
+        }));
+    } catch (error) {
+        console.error("Error fetching agencies:", error);
+        throw new Error("Could not fetch agencies");
+    }
+}
 
   async getCarsByAgency(agencyId: number) {
     const agency = await this.agencyRepository.findOne({
@@ -81,6 +99,17 @@ export class AgencyService {
       }
     
       return user.agency;
+    }
+
+    async findAgencyById(id: number): Promise<Agency> {
+      const agency = await this.agencyRepository.findOne({
+        where: { id },
+        relations: ['user'], 
+      });
+      if (!agency) {
+        throw new NotFoundException(`Agency with ID ${id} not found`);
+      }
+      return agency;
     }
     
 

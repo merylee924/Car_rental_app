@@ -1,6 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Model } from '../../model/entities/model.entity';
-import { Car } from '../../car/entities/car.entity';
 
 
 @Entity()

@@ -1,17 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 import { Car } from '../../car/entities/car.entity';
-import { User } from '../../users/user.entity';
+import { ReservationStatus } from '../enums/reservationEnums';
 
 @Entity()
 export class Reservation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.reservations, { nullable: false })
+  @ManyToOne(() => User)
   user: User;
 
-  @ManyToOne(() => Car, (car) => car.reservations, { nullable: false })
+  @ManyToOne(() => Car)
   car: Car;
+
+  @ManyToOne(() => User)
+  owner: User;
 
   @Column()
   startDate: Date;
@@ -19,6 +23,6 @@ export class Reservation {
   @Column()
   endDate: Date;
 
-  @ManyToOne(() => User, { nullable: false })
-  createdBy: User;
+  @Column({ type: 'enum', enum: ReservationStatus, default: ReservationStatus.PENDING })
+  status: ReservationStatus;
 }

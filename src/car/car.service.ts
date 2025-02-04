@@ -6,9 +6,9 @@ import { CreateCarDto } from './dto/create-car.dto';
 import { Agency } from '../agency/entities/agency.entity';
 import { Brand } from '../brand/entities/brand.entity';
 import { Model } from '../model/entities/model.entity';
-import { FilterCarDto } from './dto/filter-car.dto';
+import { User } from '../users/entities/user.entity';
+import { FilterCarDto , PriceSort} from './dto/filter-car.dto';
 import { CarCategory, FuelType } from './enums/carEnums';
-
 
 @Injectable()
 export class CarService {
@@ -81,88 +81,191 @@ async createCar(data: CreateCarDto): Promise<Car> {
     car.nbrPersonnes = data.nbrPersonnes;
   }
 
-  car.createdAt = data.createdAt || new Date().toISOString();
-
+  car.createdAt = new Date().toISOString();
 
   return this.carRepository.save(car);
 }
 
 
-
-   async filterCars(filters: FilterCarDto): Promise<Car[]> {
-      const queryBuilder = this.carRepository.createQueryBuilder('car');
-
-
-
-      // Filtrage par nom du modèle
-      if (filters.modelName) {
-        queryBuilder.innerJoinAndSelect('car.model', 'model')
-          .andWhere('model.name LIKE :modelName', { modelName: `%${filters.modelName}%` });
-      }
-
-      // Exécution de la requête et retour des résultats filtrés
-      return queryBuilder.getMany();
-    }
-
-  async getCarsNearby(latitude: number, longitude: number, radius: number): Promise<Car[]> {
-    const cars = await this.carRepository
-      .createQueryBuilder('car')
-      .leftJoinAndSelect('car.agency', 'agency')
-      .where(
-        `
-        ST_DWithin(
-          ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326),
-          agency.location,
-          :radius
-        )
-      `,
-        { latitude, longitude, radius }
+async getCarsNearby(latitude: number, longitude: number, radius: number): Promise<Car[]> {
+  const cars = await this.carRepository
+    .createQueryBuilder('car')
+    .leftJoinAndSelect('car.agency', 'agency')
+    .where(
+      `
+      ST_DWithin(
+        ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326),
+        agency.location,
+        :radius
       )
-      .getMany();
+    `,
+      { latitude, longitude, radius }
+    )
+    .getMany();
 
-    return cars;
+  return cars;
+}
+
+async getAllCars(): Promise<Car[]> {
+  return this.carRepository.find({ relations: [ 'model', 'agency'] });
+}
+
+async deleteCarById(carId: number): Promise<void> {
+  const car = await this.carRepository.findOne({ where: { id: carId } });
+
+  if (!car) {
+    throw new Error(`Car with ID ${carId} not found`);
   }
 
-  async getAllCars(): Promise<Car[]> {
-    return this.carRepository.find({ relations: [ 'model', 'agency'] });
-  }
+  await this.carRepository.remove(car);
+}
 
-  async deleteCarById(carId: number): Promise<void> {
-    const car = await this.carRepository.findOne({ where: { id: carId } });
+async getCarBrandAndModel(carId: number) {
+    const car = await this.carRepository.findOne({
+      where: { id: carId },
+      relations: ['model', 'model.brand'], 
+    });
 
     if (!car) {
-      throw new Error(`Car with ID ${carId} not found`);
+      throw new NotFoundException(`Car with ID ${carId} not found.`);
     }
 
-    await this.carRepository.remove(car);
+    return {
+      brandName: car.model.brand.name,
+      modelName: car.model.name,
+    };
+  }
+    
+async findAgencyById(agencyId: number): Promise<Agency | null> {
+  const agency = await this.agencyRepository.findOne({
+    where: { id: agencyId },
+  });
+
+  if (!agency) {
+    throw new Error(`Agence avec l'ID ${agencyId} non trouvée`);
   }
 
-  async getCarBrandAndModel(carId: number) {
-      const car = await this.carRepository.findOne({
-        where: { id: carId },
-        relations: ['model', 'model.brand'], // Ensure relations are loaded
-      });
+  return agency;
+}
 
-      if (!car) {
-        throw new NotFoundException(`Car with ID ${carId} not found.`);
-      }
+async getLatestCars(): Promise<Car[]> {
+  return this.carRepository.find({
+    order: { createdAt: 'DESC' },
+    take: 5,
+  });
+}
+    
+    
+async getFilterOptions() {
+  const [colors, years, brands] = await Promise.all([
+    this.carRepository
+      .createQueryBuilder("car")
+      .select("DISTINCT car.color", "color")
+      .where("car.color IS NOT NULL")
+      .getRawMany(),
+    this.carRepository
+      .createQueryBuilder("car")
+      .select("DISTINCT car.year", "year")
+      .where("car.year IS NOT NULL")
+      .orderBy("car.year", "DESC")
+      .getRawMany(),
+    this.brandRepository.find(),
+  ])
 
-      return {
-        brandName: car.model.brand.name,
-        modelName: car.model.name,
-      };
-    }
-    
-    async findAgencyById(agencyId: number): Promise<Agency | null> {
-      const agency = await this.agencyRepository.findOne({
-        where: { id: agencyId },
-      });
-    
-      if (!agency) {
-        throw new Error(`Agence avec l'ID ${agencyId} non trouvée`);
+  return {
+    categories: Object.values(CarCategory),
+    fuelTypes: Object.values(FuelType),
+    colors: colors.map((c) => c.color),
+    years: years.map((y) => y.year),
+    brands: brands.map((brand) => brand.name),
+  }
+}
+
+async applyFilters(filters: FilterCarDto): Promise<Partial<Car>[]> {
+  let filteredCars = await this.carRepository.find({
+    relations: ["model", "model.brand"],
+  })
+
+  if (filters.category) {
+    filteredCars = filteredCars.filter((car) => car.category === filters.category)
+  }
+  if (filters.fuel) {
+    filteredCars = filteredCars.filter((car) => car.fuelType === filters.fuel)
+  }
+  if (filters.color) {
+    filteredCars = filteredCars.filter((car) => car.color === filters.color)
+  }
+  if (filters.year) {
+    filteredCars = filteredCars.filter((car) => car.year === filters.year)
+  }
+  if (filters.brand) {
+    filteredCars = filteredCars.filter(
+      (car) => car.model && car.model.brand && car.model.brand.name === filters.brand,
+    )
+  }
+
+  if (filters.priceSort) {
+    filteredCars = filteredCars.sort((a, b) => {
+      if (filters.priceSort === PriceSort.ASC) {
+        return a.pricePerDay - b.pricePerDay
+      } else if (filters.priceSort === PriceSort.DESC) {
+        return b.pricePerDay - a.pricePerDay
       }
-    
-      return agency;
+      return 0
+    })
+  }
+
+  return filteredCars.map((car) => ({
+    id: car.id,
+    color: car.color,
+    brandName: car.model?.brand?.name,
+    modelName: car.model?.name,
+    pricePerDay: car.pricePerDay,
+    nbrPersonnes: car.nbrPersonnes,
+    imageUrl: car.imageUrl,
+    fuelType: car.fuelType,
+    year: car.year,
+  }))
+}
+
+async getCarDetailsById(carId: number) {
+  try {
+    const car = await this.carRepository.findOne({
+      where: { id: carId },
+      relations: ['model', 'model.brand', 'agency', 'agency.user'], // Charger les relations
+    });
+
+    if (!car) {
+      throw new Error('Car not found');
     }
-    
+
+    // Extraire les données liées
+    const agency = car.agency;
+    const owner = agency ? agency.user : null;
+    const model = car.model;
+    const brand = model ? model.brand : null;
+
+    return {
+      carId: car.id,  // Ajout de carId
+      agencyId: agency ? agency.id : null,  // Ajout de agencyId
+      ownerId: owner ? owner.id : null,  // Ajout de ownerId
+      image: car.imageUrl,
+      brand: brand ? brand.name : null,
+      model: model ? model.name : null,
+      category: car.category,
+      nbrPersonnes: car.nbrPersonnes,
+      fuel: car.fuelType,
+      year: car.year,
+      priceOfDay: car.pricePerDay,
+      agencyImage: agency ? agency.imageBase64 : null,
+      agencyName: agency ? agency.name : null,
+      ownerImage: owner ? owner.picture : null,
+      ownerName: owner ? `${owner.firstName} ${owner.lastName}` : null,
+    };
+  } catch (error) {
+    console.error('Error fetching car details:', error);
+    throw error;
+  }
+}
+
 }

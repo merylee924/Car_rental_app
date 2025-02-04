@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, OneToOne ,JoinColumn} from 'typeorm';
 import { Car } from '../../car/entities/car.entity';
-import { User } from '../../users/user.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class Agency {

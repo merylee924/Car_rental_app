@@ -1,5 +1,5 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
-import  UserRole  from './userRole';
+import  UserRole  from '../userRole';
 export class CreateUserDto {
   @IsString()
   username: string;

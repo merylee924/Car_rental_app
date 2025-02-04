@@ -1,6 +1,7 @@
-import { Controller, Post, Body,Get,Param} from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
-import { CreateReservationDto } from './dto/createReservationDto.dto';
+import { CreateReservationDto } from './dto/create-reservation.dto';
+import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { Reservation } from './entities/reservation.entity';
 
 @Controller('reservations')
@@ -12,24 +13,18 @@ export class ReservationController {
     return this.reservationService.create(createReservationDto);
   }
 
-@Get('getAll')
-  async findAll(): Promise<Reservation[]> {
-    return this.reservationService.findAll();
+  @Get('owner/:ownerId')
+  async findReservationsForOwner(@Param('ownerId') ownerId: number): Promise<Reservation[]> {
+    return this.reservationService.findReservationsForOwner(ownerId);
   }
 
-  // Get reservation by ID
-  @Get(':id')
-  async findOne(@Param('id') id: number): Promise<Reservation> {
-    return this.reservationService.findOne(id);
+  @Patch('owner/approve/:id')
+  async approveReservation(@Param('id') id: number, @Body() updateReservationDto: UpdateReservationDto) {
+    return this.reservationService.updateReservationStatus(id, updateReservationDto);
   }
 
-  // Get reservations by user ID
-  @Get('user/:userId')
-  async findByUser(@Param('userId') userId: number): Promise<Reservation[]> {
-    return this.reservationService.findByUser(userId);
+  @Get('user/:userId/status')
+  async findReservationStatusForUser(@Param('userId') userId: number): Promise<Reservation[]> {
+    return this.reservationService.findReservationStatusForUser(userId);
   }
-   @Get('car/:carId')
-    async findByCar(@Param('carId') carId: number): Promise<Reservation[]> {
-      return this.reservationService.findByCar(carId);
-    }
 }
