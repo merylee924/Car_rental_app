@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, OneToOne } from 'typ
 import UserRole from '../userRole';
 import { Agency } from '../../agency/entities/agency.entity';
 import { Reservation } from '../../reservation/entities/reservation.entity';
+import { Conversation } from '../../conversation/conversation.entity';
+import { Message } from '../../message/message.entity';
 
 @Entity('users')
 export class User {
@@ -36,7 +38,19 @@ export class User {
   @OneToMany(() => Reservation, (reservation) => reservation.user)
   reservations: Reservation[];
 
-  // Nouvelle relation OneToOne avec Agency
+  // Relation OneToOne avec Agency
   @OneToOne(() => Agency, (agency) => agency.user, { nullable: true })
   agency: Agency;
+
+  // Relation OneToMany avec Conversation (comme participant)
+  @OneToMany(() => Conversation, (conversation) => conversation.user)
+  userConversations: Conversation[];
+
+  // Relation OneToMany avec Conversation (comme créateur)
+  @OneToMany(() => Conversation, (conversation) => conversation.owner)
+  ownerConversations: Conversation[];
+
+  // Relation OneToMany avec Message (pour les messages envoyés par l'utilisateur)
+  @OneToMany(() => Message, (message) => message.sender)
+  messages: Message[];
 }
