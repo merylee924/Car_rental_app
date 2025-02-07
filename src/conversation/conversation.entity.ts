@@ -15,4 +15,7 @@ export class Conversation {
 
   @OneToMany(() => Message, (message) => message.conversation)
   messages: Message[];
+
+   @Column({ unique: true })
+    conversationKey: string;
 }

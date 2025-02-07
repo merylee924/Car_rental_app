@@ -52,5 +52,9 @@ export class User {
 
   // Relation OneToMany avec Message (pour les messages envoyés par l'utilisateur)
   @OneToMany(() => Message, (message) => message.sender)
-  messages: Message[];
+  sentMessages: Message[];
+
+  // Relation OneToMany avec Message (pour les messages reçus par l'utilisateur)
+  @OneToMany(() => Message, (message) => message.receiver)
+  receivedMessages: Message[];
 }

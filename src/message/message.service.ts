@@ -17,41 +17,74 @@ export class MessageService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async sendMessage(createMessageDto: SendMessageDto): Promise<Message> { // Changed to CreateMessageDto
-    const { senderId, receiverId, content } = createMessageDto; // Adjusted to use CreateMessageDto
+async sendMessage(sendMessageDto: SendMessageDto): Promise<Message> {
+  const { senderId, receiverId, content } = sendMessageDto;
 
-      const sender = await this.userRepository.findOne({ where: { id: senderId } });
-       const receiver = await this.userRepository.findOne({ where: { id: receiverId } });
+  // Récupérer les utilisateurs en fonction des IDs
+  const sender = await this.userRepository.findOne({ where: { id: senderId } });
+  const receiver = await this.userRepository.findOne({ where: { id: receiverId } });
 
-
-       if (!sender || !receiver) {
-         throw new Error('Sender or Receiver not found');
-       }
-      let conversation = await this.conversationRepository.findOne({
-          where: [
-            { user: sender, owner: receiver },
-            { user: receiver, owner: sender },
-          ],
-        });
-      if (!conversation) {
-          conversation = new Conversation();
-          conversation.user = sender;
-          conversation.owner = receiver;
-          await this.conversationRepository.save(conversation);
-        }
-          const message = new Message();
-            message.content = content;
-            message.sender = sender;
-            message.receiver = receiver;
-            message.conversation = conversation;
-
-            return this.messageRepository.save(message);
-          }
-
-  async getMessages(conversationId: number): Promise<Message[]> {
-    return this.messageRepository.find({
-      where: { conversation: { id: conversationId } },
-      order: { createdAt: 'ASC' },
-    });
+  if (!sender || !receiver) {
+    throw new NotFoundException('Sender or Receiver not found');
   }
+
+  // Générer une clé unique pour la conversation
+  const conversationKey = [senderId, receiverId].sort().join('_');
+
+  // Vérifier si la conversation existe déjà
+  let conversation = await this.conversationRepository.findOne({
+    where: { conversationKey },
+    relations: ['user', 'owner'], // Inclure les relations pour vérifier les participants
+  });
+
+  // Si la conversation n'existe pas, la créer
+  if (!conversation) {
+    conversation = this.conversationRepository.create({
+      conversationKey,
+      user: sender,
+      owner: receiver,
+    });
+    await this.conversationRepository.save(conversation);
+  }
+
+  // Créer le message avec le sender et le receiver spécifiés
+  const message = this.messageRepository.create({
+    content,
+    sender, // Expéditeur
+    receiver, // Destinataire
+    conversation,
+  });
+
+  // Sauvegarder et retourner le message
+  return this.messageRepository.save(message);
+}
+
+ async getMessages(conversationId: number): Promise<Message[]> {
+   return this.messageRepository.find({
+     where: { conversation: { id: conversationId } },
+     order: { createdAt: 'ASC' }, // Tri des messages par date de création croissante
+   });
+ }
+async getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]> {
+  // Générer la clé unique de conversation
+  const conversationKey = [userId1, userId2].sort().join('_');
+
+  // Rechercher la conversation correspondant aux deux utilisateurs
+  const conversation = await this.conversationRepository.findOne({
+    where: { conversationKey },
+  });
+
+  if (!conversation) {
+    throw new NotFoundException(`No conversation found between user ${userId1} and user ${userId2}`);
+  }
+
+  // Récupérer les messages associés à cette conversation
+  return this.messageRepository.find({
+    where: { conversation: { id: conversation.id } },
+    order: { createdAt: 'ASC' }, // Tri par ordre chronologique
+    relations: ['sender', 'receiver'], // Inclure les informations des expéditeurs et destinataires
+  });
+}
+
+
 }

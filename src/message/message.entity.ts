@@ -1,8 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Conversation } from '../conversation/conversation.entity';
 
-@Entity('messages')
+@Entity()
 export class Message {
   @PrimaryGeneratedColumn()
   id: number;
@@ -10,15 +10,15 @@ export class Message {
   @Column()
   content: string;
 
-  @ManyToOne(() => User, (user) => user.messages)
+  @ManyToOne(() => User, (user) => user.sentMessages, { eager: true }) // Relation avec l'expéditeur
   sender: User;
 
-  @ManyToOne(() => User, (user) => user.messages)
+  @ManyToOne(() => User, (user) => user.receivedMessages, { eager: true }) // Relation avec le destinataire
   receiver: User;
 
-  @ManyToOne(() => Conversation, (conversation) => conversation.messages, { onDelete: 'CASCADE' })
-   conversation: Conversation;
+  @ManyToOne(() => Conversation, (conversation) => conversation.messages)
+  conversation: Conversation;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
 }

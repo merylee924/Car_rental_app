@@ -3,26 +3,27 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from './conversation.entity';
 import { User } from '../users/entities/user.entity';
-import { Message } from '../message/message.entity'; // Ajout de l'import de Message
+import { Message } from '../message/message.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
+import { Server } from 'socket.io';
+import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 
+@WebSocketGateway({ cors: true })
 @Injectable()
 export class ConversationService {
+  @WebSocketServer()
+  private server: Server;
+
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
-
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
     @InjectRepository(Message)
-    private readonly messageRepository: Repository<Message>, // Ajout pour éviter les erreurs
+    private readonly messageRepository: Repository<Message>,
   ) {}
 
-  // Créer une nouvelle conversation entre un utilisateur et un propriétaire
-  async createConversation(
-    createConversationDto: CreateConversationDto,
-  ): Promise<Conversation> {
+  async createConversation(createConversationDto: CreateConversationDto): Promise<Conversation> {
     const { userId, ownerId } = createConversationDto;
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -32,18 +33,18 @@ export class ConversationService {
       throw new NotFoundException('User or owner not found');
     }
 
-    const conversation = new Conversation();
-    conversation.user = user;
-    conversation.owner = owner;
+    const conversation = this.conversationRepository.create({ user, owner });
+    const savedConversation = await this.conversationRepository.save(conversation);
 
-    return this.conversationRepository.save(conversation);
+    this.server.emit('conversationCreated', savedConversation);
+
+    return savedConversation;
   }
 
-  // Récupérer une conversation par ID
   async getConversation(id: number): Promise<Conversation> {
     const conversation = await this.conversationRepository.findOne({
       where: { id },
-      relations: ['user', 'owner', 'messages'], // Charger les messages associés
+      relations: ['user', 'owner', 'messages'],
     });
 
     if (!conversation) {
@@ -53,30 +54,43 @@ export class ConversationService {
     return conversation;
   }
 
-  // Récupérer toutes les conversations d'un utilisateur
-  async getUserConversations(userId: number): Promise<Conversation[]> {
-    return this.conversationRepository.find({
+  async getUserConversations(userId: number) {
+    const conversations = await this.conversationRepository.find({
       where: [{ user: { id: userId } }, { owner: { id: userId } }],
-      relations: ['user', 'owner', 'messages'], // Charger les messages associés
+      relations: ['user', 'owner', 'messages'],
+    });
+
+    return conversations.map((conversation) => {
+      const otherPerson = conversation.user.id === userId ? conversation.owner : conversation.user;
+
+      return {
+        id: conversation.id,
+        user: {
+          id: otherPerson.id,
+          firstName: otherPerson.firstName,
+          lastName: otherPerson.lastName,
+          picture: otherPerson.picture,
+        },
+        messages: conversation.messages,
+      };
     });
   }
 
-  // Récupérer une conversation entre deux utilisateurs
   async findConversationBetweenUsers(userId1: number, userId2: number): Promise<Conversation | null> {
     return this.conversationRepository.findOne({
       where: [
         { user: { id: userId1 }, owner: { id: userId2 } },
         { user: { id: userId2 }, owner: { id: userId1 } },
       ],
-      relations: ['user', 'owner', 'messages'], // Charger les messages associés
+      relations: ['user', 'owner', 'messages'],
     });
   }
 
-  // Récupérer tous les messages d'une conversation (Ajout pour éviter l'erreur TS)
   async getConversationMessages(conversationId: number): Promise<Message[]> {
     return this.messageRepository.find({
       where: { conversation: { id: conversationId } },
-      relations: ['conversation', 'sender'], // Charger l'expéditeur et la conversation
+      relations: ['conversation', 'sender'],
     });
   }
+
 }
